@@ -14,113 +14,235 @@ class AddEventScreen extends StatefulWidget {
 class _AddEventScreenState extends State<AddEventScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  late DateTime _startDate;
-  late DateTime _endDate;
-  bool _isAllDay = false;
+  final _reminderController = TextEditingController();
+  late DateTime _date;
+  TimeOfDay _startTime = TimeOfDay.now();
+  TimeOfDay _endTime =
+      TimeOfDay.now().replacing(hour: TimeOfDay.now().hour + 1);
+  Color _selectedColor = Colors.red;
 
   @override
   void initState() {
     super.initState();
-    _startDate = widget.selectedDate;
-    _endDate = widget.selectedDate.add(Duration(hours: 1));
+    _date = widget.selectedDate;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Thêm Sự Kiện'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text('Add Event'),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: 'Tiêu đề'),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: InputDecoration(
+                labelText: 'Tiêu đề',
+                border: OutlineInputBorder(),
               ),
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Mô tả'),
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(
+                labelText: 'Ghi chú',
+                border: OutlineInputBorder(),
               ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      child: Text('Ngày bắt đầu: ${_startDate.toLocal()}'
-                          .split(' ')[0]),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _startDate,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null && picked != _startDate) {
-                          setState(() {
-                            _startDate = picked;
-                          });
-                        }
-                      },
+              maxLines: 3,
+            ),
+            SizedBox(height: 16),
+            InkWell(
+              onTap: () => _selectDate(context),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Ngày',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  "${_date.day}/${_date.month}/${_date.year}",
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _selectTime(context, isStartTime: true),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Giờ Bắt Đầu',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.access_time),
+                      ),
+                      child: Text(_startTime.format(context)),
                     ),
                   ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      child: Text(
-                          'Ngày kết thúc: ${_endDate.toLocal()}'.split(' ')[0]),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _endDate,
-                          firstDate: _startDate,
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null && picked != _endDate) {
-                          setState(() {
-                            _endDate = picked;
-                          });
-                        }
-                      },
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _selectTime(context, isStartTime: false),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Giờ Kết Thúc',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.access_time),
+                      ),
+                      child: Text(_endTime.format(context)),
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: _reminderController,
+              decoration: InputDecoration(
+                labelText: 'Nhắc Nhở',
+                border: OutlineInputBorder(),
               ),
-              CheckboxListTile(
-                title: Text("Cả ngày"),
-                value: _isAllDay,
-                onChanged: (value) {
-                  setState(() {
-                    _isAllDay = value ?? false;
-                  });
-                },
+            ),
+            SizedBox(height: 16),
+            Text('Chọn Màu', style: TextStyle(fontSize: 16)),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center, // Center the buttons
+              children: [
+                _colorButton(Colors.red),
+                SizedBox(width: 12), // Add small spacing between buttons
+                _colorButton(Colors.yellow),
+                SizedBox(width: 12), // Add small spacing between buttons
+                _colorButton(Colors.blue),
+              ],
+            ),
+            SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _saveEvent,
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(
+                      255, 94, 147, 228), // Green background
+                  padding:
+                      EdgeInsets.symmetric(vertical: 16), // Padding for height
+                  side: BorderSide(
+                      color: const Color.fromARGB(255, 85, 158, 237),
+                      width: 2), // Border style
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8), // Rounded corners
+                  ),
+                ),
+                child: Text(
+                  'Tạo sự kiện',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 16), // White text
+                ),
               ),
-              ElevatedButton(
-                child: Text('Lưu'),
-                onPressed: () {
-                  if (_titleController.text.isNotEmpty) {
-                    Event newEvent = Event(
-                      title: _titleController.text,
-                      description: _descriptionController.text,
-                      startDate: _startDate,
-                      endDate: _endDate,
-                      isAllDay: _isAllDay,
-                      color: Colors.blue.value,
-                    );
-                    widget.onEventAdded(newEvent);
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _colorButton(Color color) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedColor = color),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _selectedColor == color ? Colors.black : Colors.transparent,
+            width: 2,
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != _date) {
+      setState(() {
+        _date = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context,
+      {required bool isStartTime}) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStartTime ? _startTime : _endTime,
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStartTime) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  void _saveEvent() {
+    if (_titleController.text.isNotEmpty) {
+      final startDateTime = DateTime(
+        _date.year,
+        _date.month,
+        _date.day,
+        _startTime.hour,
+        _startTime.minute,
+      );
+      final endDateTime = DateTime(
+        _date.year,
+        _date.month,
+        _date.day,
+        _endTime.hour,
+        _endTime.minute,
+      );
+
+      Event newEvent = Event(
+        title: _titleController.text,
+        description: _descriptionController.text,
+        startDate: startDateTime,
+        endDate: endDateTime,
+        isAllDay: false, // You might want to add an option for all-day events
+        color: _selectedColor.value,
+      );
+
+      DatabaseHelper().createEvent(newEvent).then((id) {
+        newEvent = Event(
+          id: id,
+          title: newEvent.title,
+          description: newEvent.description,
+          startDate: newEvent.startDate,
+          endDate: newEvent.endDate,
+          isAllDay: newEvent.isAllDay,
+          color: newEvent.color,
+        );
+        widget.onEventAdded(newEvent);
+        Navigator.pop(context);
+      });
+    }
   }
 }

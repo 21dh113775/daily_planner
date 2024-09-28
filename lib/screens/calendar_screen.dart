@@ -50,27 +50,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : Padding(
-              padding:
-                  const EdgeInsets.all(20.0), // Add padding for better spacing
+              padding: const EdgeInsets.all(12.0),
               child: SfCalendar(
                 view: _calendarView,
                 dataSource: _events,
-                cellEndPadding: 10, // Adjust padding between cells
+                cellEndPadding: 10,
                 monthViewSettings: MonthViewSettings(
                   showAgenda: true,
                   appointmentDisplayMode:
                       MonthAppointmentDisplayMode.appointment,
                   monthCellStyle: MonthCellStyle(
-                    textStyle: TextStyle(fontSize: 16), // Increase font size
+                    textStyle: TextStyle(fontSize: 14),
                   ),
                 ),
                 timeSlotViewSettings: TimeSlotViewSettings(
                   startHour: 7,
-                  endHour: 20,
-                  timeTextStyle:
-                      TextStyle(fontSize: 16), // Increase time text size
+                  endHour: 15,
+                  timeTextStyle: TextStyle(fontSize: 14),
                 ),
-                firstDayOfWeek: 1, // Monday
+                firstDayOfWeek: 1,
                 showWeekNumber: true,
                 allowedViews: [
                   CalendarView.day,
@@ -79,6 +77,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   CalendarView.month,
                   CalendarView.schedule,
                 ],
+                onTap: (CalendarTapDetails details) {
+                  if (details.targetElement == CalendarElement.calendarCell) {
+                    _handleCalendarTap(details.date!);
+                  }
+                },
               ),
             ),
     );
@@ -130,6 +133,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
     );
   }
+
+  // New method to handle calendar taps
+  void _handleCalendarTap(DateTime tappedDate) {
+    // Check if the tap is a double tap
+    if (_lastTapTime != null &&
+        DateTime.now().difference(_lastTapTime!) <
+            Duration(milliseconds: 200)) {
+      _showAddEventDialog(tappedDate);
+    }
+    _lastTapTime = DateTime.now();
+  }
+
+  DateTime? _lastTapTime;
 }
 
 class _EventDataSource extends CalendarDataSource {
